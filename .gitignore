@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+env/
+ENV/
+.venv
+backend/venv/
+
+# Environments
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.pnpm-store/
+frontend/.turbo/
+
+# Backend
+backend/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/.mypy_cache/
+
+# Temporary files
+/tmp/
+*.log
+*.pid
+celerybeat-schedule
+celerybeat.pid
+.dev-pids
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Video files (temporary downloads)
+*.mp4
+*.webm
+*.mkv
+*.avi
+*.mov
+*.flv
+*.mp3
+*.wav
+*.m4a
+*.jpg
+*.jpeg
+*.png
+*.gif
+
+# Alembic
+backend/alembic/versions/*.pyc

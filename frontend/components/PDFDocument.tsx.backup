@@ -1,0 +1,752 @@
+"use client";
+
+import React from 'react';
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Image,
+  Font,
+} from '@react-pdf/renderer';
+import { Job } from '@/lib/types';
+
+// Register fonts - using Helvetica as default (built-in PDF font)
+// This ensures text is always visible
+
+// Create styles that match the web page
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontFamily: 'Helvetica',
+    fontSize: 10,
+    lineHeight: 1.5,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
+  },
+  header: {
+    marginBottom: 24,
+    paddingBottom: 16,
+    borderBottom: '2 solid #E5E7EB',
+  },
+  reportTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 8,
+  },
+  reportSubtitle: {
+    fontSize: 10,
+    color: '#666666',
+  },
+  
+  // Job Info Section
+  jobInfoBox: {
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  jobInfoRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  jobInfoLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#6B7280',
+    width: 80,
+  },
+  jobInfoValue: {
+    fontSize: 9,
+    color: '#111827',
+    flex: 1,
+  },
+  
+  // Section styles
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  
+  // Video Information (YouTube Metadata)
+  videoInfoBox: {
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  thumbnail: {
+    width: '100%',
+    height: 280,
+    objectFit: 'cover',
+  },
+  videoInfoContent: {
+    padding: 16,
+  },
+  videoTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  channelInfo: {
+    fontSize: 9,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  publishedInfo: {
+    fontSize: 9,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTop: '1 solid #E5E7EB',
+    marginBottom: 12,
+  },
+  statItem: {
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: 7,
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  descriptionSection: {
+    paddingTop: 12,
+    borderTop: '1 solid #E5E7EB',
+    marginBottom: 12,
+  },
+  descriptionTitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#374151',
+    marginBottom: 6,
+  },
+  descriptionText: {
+    fontSize: 8,
+    color: '#6B7280',
+    lineHeight: 1.6,
+  },
+  tagsSection: {
+    paddingTop: 12,
+    borderTop: '1 solid #E5E7EB',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tag: {
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    fontSize: 7,
+    color: '#374151',
+  },
+  
+  // AI Usage Section
+  aiUsageBox: {
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  aiUsageGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  aiUsageCard: {
+    flex: 1,
+    borderRadius: 8,
+    padding: 14,
+  },
+  whisperCard: {
+    backgroundColor: '#4F46E5',
+  },
+  gptCard: {
+    backgroundColor: '#4F46E5',
+  },
+  totalCostCard: {
+    backgroundColor: '#10B981',
+  },
+  aiCardTitle: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  aiCardDetail: {
+    fontSize: 7,
+    color: '#FFFFFF',
+    marginBottom: 3,
+  },
+  aiCardCost: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginTop: 4,
+  },
+  
+  // Summary Section
+  summaryBox: {
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  summaryText: {
+    fontSize: 10,
+    color: '#374151',
+    lineHeight: 1.6,
+  },
+  
+  // Metadata Grid (Content Type, Sentiment, Language, Frames)
+  metadataGrid: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  metadataCard: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    padding: 12,
+  },
+  metadataLabel: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  metadataValue: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#111827',
+    textTransform: 'capitalize',
+  },
+  
+  // Analyzed Frames
+  framesBox: {
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  framesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  frameItem: {
+    width: '22%',
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  frameImage: {
+    width: '100%',
+    height: 80,
+    objectFit: 'cover',
+  },
+  frameInfo: {
+    padding: 8,
+    borderTop: '1 solid #E5E7EB',
+  },
+  frameLabel: {
+    fontSize: 7,
+    color: '#6B7280',
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  frameTime: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#4F46E5',
+  },
+  
+  // Topics Section
+  topicsBox: {
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  topicsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  topicTag: {
+    backgroundColor: '#F3F4F6',
+    border: '1 solid #E5E7EB',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#374151',
+  },
+  
+  // Key Points Section
+  keyPointsBox: {
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  keyPointItem: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  keyPointNumber: {
+    width: 24,
+    height: 24,
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingTop: 6,
+  },
+  keyPointContent: {
+    flex: 1,
+  },
+  keyPointText: {
+    fontSize: 9,
+    color: '#374151',
+    lineHeight: 1.6,
+    marginBottom: 4,
+  },
+  keyPointTimestamp: {
+    fontSize: 8,
+    color: '#6B7280',
+  },
+  
+  // Insights Section
+  insightsBox: {
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  insightsText: {
+    fontSize: 9,
+    color: '#374151',
+    lineHeight: 1.6,
+  },
+  
+  // Transcript Section
+  transcriptBox: {
+    backgroundColor: '#FFFFFF',
+    border: '1 solid #E5E7EB',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 20,
+  },
+  transcriptContent: {
+    backgroundColor: '#F9FAFB',
+    border: '1 solid #E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+  },
+  transcriptText: {
+    fontSize: 8,
+    color: '#374151',
+    lineHeight: 1.6,
+  },
+  
+  // Footer
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 40,
+    right: 40,
+    textAlign: 'center',
+    fontSize: 8,
+    color: '#9CA3AF',
+  },
+});
+
+interface PDFDocumentProps {
+  job: Job;
+}
+
+export const JobPDFDocument: React.FC<PDFDocumentProps> = ({ job }) => {
+  const formatDate = (date: string | null) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const formatDateShort = (date: string | null) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const formatDuration = (seconds: number | null) => {
+    if (!seconds) return 'N/A';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatNumber = (num: number | null) => {
+    if (num === null || num === undefined) return '0';
+    return num.toLocaleString('en-US');
+  };
+
+  const analysis = job.analysis?.summary;
+  const aiUsage = job.analysis?.ai_usage;
+  const frames = analysis?.frames || [];
+
+  return (
+    <Document>
+      {/* Page 1: Header, Job Info, Video Information */}
+      <Page size="A4" style={styles.page}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.reportTitle}>Video Analysis Report</Text>
+          <Text style={styles.reportSubtitle}>
+            Generated on {formatDate(new Date().toISOString())}
+          </Text>
+        </View>
+
+        {/* Job Information */}
+        <View style={styles.jobInfoBox}>
+          <View style={styles.jobInfoRow}>
+            <Text style={styles.jobInfoLabel}>Job ID:</Text>
+            <Text style={styles.jobInfoValue}>{job.id}</Text>
+          </View>
+          <View style={styles.jobInfoRow}>
+            <Text style={styles.jobInfoLabel}>Video URL:</Text>
+            <Text style={styles.jobInfoValue}>{job.youtube_url}</Text>
+          </View>
+          <View style={styles.jobInfoRow}>
+            <Text style={styles.jobInfoLabel}>Created:</Text>
+            <Text style={styles.jobInfoValue}>{formatDate(job.created_at)}</Text>
+          </View>
+        </View>
+
+        {/* Video Information (YouTube Metadata) */}
+        {(job.video_title || job.channel_title || job.thumbnail_url) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Video Information</Text>
+            <View style={styles.videoInfoBox}>
+              {job.thumbnail_url && (
+                <Image
+                  src={job.thumbnail_url}
+                  style={styles.thumbnail}
+                />
+              )}
+              <View style={styles.videoInfoContent}>
+                {job.video_title && (
+                  <Text style={styles.videoTitle}>{job.video_title}</Text>
+                )}
+                
+                {job.channel_title && (
+                  <Text style={styles.channelInfo}>Channel: {job.channel_title}</Text>
+                )}
+
+                {job.published_at && (
+                  <Text style={styles.publishedInfo}>
+                    Published {formatDateShort(job.published_at)}
+                  </Text>
+                )}
+
+                <View style={styles.statsGrid}>
+                  {job.view_count !== null && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Views</Text>
+                      <Text style={styles.statValue}>{formatNumber(job.view_count)}</Text>
+                    </View>
+                  )}
+                  {job.like_count !== null && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Likes</Text>
+                      <Text style={styles.statValue}>{formatNumber(job.like_count)}</Text>
+                    </View>
+                  )}
+                  {job.comment_count !== null && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Comments</Text>
+                      <Text style={styles.statValue}>{formatNumber(job.comment_count)}</Text>
+                    </View>
+                  )}
+                  {job.video_duration && (
+                    <View style={styles.statItem}>
+                      <Text style={styles.statLabel}>Duration</Text>
+                      <Text style={styles.statValue}>{formatDuration(job.video_duration)}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {job.description && (
+                  <View style={styles.descriptionSection}>
+                    <Text style={styles.descriptionTitle}>Description</Text>
+                    <Text style={styles.descriptionText}>{job.description}</Text>
+                  </View>
+                )}
+
+                {job.tags && job.tags.length > 0 && (
+                  <View style={styles.tagsSection}>
+                    <Text style={styles.descriptionTitle}>Tags</Text>
+                    <View style={styles.tagsContainer}>
+                      {job.tags.map((tag, index) => (
+                        <Text key={index} style={styles.tag}>{tag}</Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+
+        <Text style={styles.footer} render={({ pageNumber }) => `Page ${pageNumber}`} fixed />
+      </Page>
+
+      {/* Page 2: AI Usage & Summary & Metadata */}
+      <Page size="A4" style={styles.page}>
+        {/* AI Usage & Cost */}
+        {aiUsage && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>AI Usage & Cost</Text>
+            <View style={styles.aiUsageBox}>
+              <View style={styles.aiUsageGrid}>
+                {/* Whisper Card */}
+                <View style={[styles.aiUsageCard, styles.whisperCard]}>
+                  <Text style={styles.aiCardTitle}>Audio Transcription</Text>
+                  <Text style={styles.aiCardDetail}>Model: {aiUsage.whisper_model}</Text>
+                  <Text style={styles.aiCardDetail}>Duration: {aiUsage.whisper_duration_seconds}s</Text>
+                  <Text style={styles.aiCardCost}>${aiUsage.whisper_cost_usd.toFixed(4)}</Text>
+                </View>
+
+                {/* GPT Card */}
+                <View style={[styles.aiUsageCard, styles.gptCard]}>
+                  <Text style={styles.aiCardTitle}>Video Analysis</Text>
+                  <Text style={styles.aiCardDetail}>Model: {aiUsage.gpt_model}</Text>
+                  <Text style={styles.aiCardDetail}>Tokens: {formatNumber(aiUsage.gpt_total_tokens)}</Text>
+                  <Text style={styles.aiCardDetail}>
+                    {formatNumber(aiUsage.gpt_prompt_tokens)} in · {formatNumber(aiUsage.gpt_completion_tokens)} out
+                  </Text>
+                  <Text style={styles.aiCardCost}>${aiUsage.gpt_cost_usd.toFixed(4)}</Text>
+                </View>
+
+                {/* Total Cost Card */}
+                <View style={[styles.aiUsageCard, styles.totalCostCard]}>
+                  <Text style={styles.aiCardTitle}>Total Cost</Text>
+                  <Text style={styles.aiCardCost}>${aiUsage.total_cost_usd.toFixed(4)}</Text>
+                  <Text style={styles.aiCardDetail}>Estimated USD</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Summary */}
+        {analysis && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Summary</Text>
+            <View style={styles.summaryBox}>
+              <Text style={styles.summaryText}>{analysis.summary}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Metadata Grid */}
+        {analysis && (
+          <View style={styles.section}>
+            <View style={styles.metadataGrid}>
+              <View style={styles.metadataCard}>
+                <Text style={styles.metadataLabel}>Content Type</Text>
+                <Text style={styles.metadataValue}>{analysis.content_type}</Text>
+              </View>
+              <View style={styles.metadataCard}>
+                <Text style={styles.metadataLabel}>Sentiment</Text>
+                <Text style={styles.metadataValue}>{analysis.sentiment}</Text>
+              </View>
+              <View style={styles.metadataCard}>
+                <Text style={styles.metadataLabel}>Language</Text>
+                <Text style={styles.metadataValue}>{analysis.language}</Text>
+              </View>
+              <View style={styles.metadataCard}>
+                <Text style={styles.metadataLabel}>Frames Analyzed</Text>
+                <Text style={styles.metadataValue}>{job.frames_count || 0}</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        <Text style={styles.footer} render={({ pageNumber }) => `Page ${pageNumber}`} fixed />
+      </Page>
+
+      {/* Page 3: Analyzed Frames */}
+      {frames.length > 0 && (
+        <Page size="A4" style={styles.page}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Analyzed Frames</Text>
+            <View style={styles.framesBox}>
+              <View style={styles.framesGrid}>
+                {frames.slice(0, 16).map((frame, index) => (
+                  <View key={index} style={styles.frameItem}>
+                    <Image
+                      src={`http://localhost:8000${frame.path}`}
+                      style={styles.frameImage}
+                    />
+                    <View style={styles.frameInfo}>
+                      <Text style={styles.frameLabel}>Frame {index + 1}</Text>
+                      <Text style={styles.frameTime}>{formatTime(frame.timestamp)}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.footer} render={({ pageNumber }) => `Page ${pageNumber}`} fixed />
+        </Page>
+      )}
+
+      {/* Continue with more frames if needed */}
+      {frames.length > 16 && (
+        <Page size="A4" style={styles.page}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Analyzed Frames (continued)</Text>
+            <View style={styles.framesBox}>
+              <View style={styles.framesGrid}>
+                {frames.slice(16, 32).map((frame, index) => (
+                  <View key={index} style={styles.frameItem}>
+                    <Image
+                      src={`http://localhost:8000${frame.path}`}
+                      style={styles.frameImage}
+                    />
+                    <View style={styles.frameInfo}>
+                      <Text style={styles.frameLabel}>Frame {index + 17}</Text>
+                      <Text style={styles.frameTime}>{formatTime(frame.timestamp)}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.footer} render={({ pageNumber }) => `Page ${pageNumber}`} fixed />
+        </Page>
+      )}
+
+      {/* Page: Topics & Key Points */}
+      {analysis && (
+        <Page size="A4" style={styles.page}>
+          {/* Topics */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Topics</Text>
+            <View style={styles.topicsBox}>
+              <View style={styles.topicsContainer}>
+                {analysis.topics.map((topic, index) => (
+                  <Text key={index} style={styles.topicTag}>{topic}</Text>
+                ))}
+              </View>
+            </View>
+          </View>
+
+          {/* Key Points */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Key Points</Text>
+            <View style={styles.keyPointsBox}>
+              {analysis.key_points.map((point, index) => (
+                <View key={index} style={styles.keyPointItem}>
+                  <Text style={styles.keyPointNumber}>{index + 1}</Text>
+                  <View style={styles.keyPointContent}>
+                    <Text style={styles.keyPointText}>{point.point}</Text>
+                    {point.timestamp !== "N/A" && (
+                      <Text style={styles.keyPointTimestamp}>{point.timestamp}</Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <Text style={styles.footer} render={({ pageNumber }) => `Page ${pageNumber}`} fixed />
+        </Page>
+      )}
+
+      {/* Page: Detailed Insights */}
+      {analysis && (
+        <Page size="A4" style={styles.page}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Detailed Insights</Text>
+            <View style={styles.insightsBox}>
+              <Text style={styles.insightsText}>{analysis.insights}</Text>
+            </View>
+          </View>
+
+          <Text style={styles.footer} render={({ pageNumber }) => `Page ${pageNumber}`} fixed />
+        </Page>
+      )}
+
+      {/* Page: Full Transcript */}
+      {job.transcript && (
+        <Page size="A4" style={styles.page}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Full Transcript</Text>
+            <View style={styles.transcriptBox}>
+              <View style={styles.transcriptContent}>
+                <Text style={styles.transcriptText}>{job.transcript}</Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.footer} render={({ pageNumber }) => `Page ${pageNumber}`} fixed />
+        </Page>
+      )}
+    </Document>
+  );
+};

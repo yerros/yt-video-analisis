@@ -1,0 +1,29 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.5
+pydantic-settings==2.7.1
+sqlalchemy==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+redis==5.2.1
+celery==5.4.0
+python-dotenv==1.0.1
+greenlet==3.1.1
+
+# Video processing
+yt-dlp==2024.12.23
+opencv-python-headless==4.10.0.84
+scenedetect[opencv]==0.6.4
+mlx-whisper==0.4.3
+
+# OpenAI
+openai==1.59.7
+
+# YouTube API
+google-api-python-client==2.152.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1
+
+# Dev tools
+ruff==0.8.6
+black==24.10.0
