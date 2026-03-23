@@ -11,7 +11,7 @@ class JobCreate(BaseModel):
     """Schema for creating a new job."""
 
     youtube_url: HttpUrl = Field(..., description="YouTube video URL")
-    disable_transcript: bool = Field(False, description="Skip audio transcription to save time and costs")
+    disable_transcript: bool = Field(True, description="Skip audio transcription to save time and costs")
 
 
 class JobResponse(BaseModel):

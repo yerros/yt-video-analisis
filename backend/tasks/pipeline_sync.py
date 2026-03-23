@@ -15,6 +15,7 @@ from openai import OpenAI
 
 from celery_app import celery_app
 from core.config import settings
+from core.exceptions import DownloadFailedError, VideoTooLongError
 from db.session import sync_session_maker
 from models.job import Job, JobStatus
 from services.analyzer import analyze_video
@@ -223,15 +224,29 @@ def run_pipeline(self, job_id: str) -> None:
             
             update_progress(5, JobStatus.DOWNLOADING, f"Metadata fetched: {metadata.get('title', 'Unknown')}")
             logger.info(f"Job {job_id}: YouTube metadata fetched successfully")
+            
+            # Validate video duration
+            duration = metadata.get("duration_seconds", 0)
+            if not duration or duration <= 0:
+                error_msg = (
+                    f"Video has invalid duration ({duration}s). "
+                    f"This usually means the video is unavailable, deleted, private, "
+                    f"region-locked, a live stream, or has other access restrictions."
+                )
+                logger.error(f"Job {job_id}: {error_msg}")
+                raise DownloadFailedError(error_msg)
+            
+        except DownloadFailedError:
+            raise  # Re-raise to fail the job properly
         except Exception as e:
-            logger.warning(f"Job {job_id}: Could not fetch YouTube metadata: {e}")
-            metadata = None
-            # Continue pipeline even if metadata fetch fails
-            update_progress(5, JobStatus.DOWNLOADING, "Metadata fetch failed, continuing...")
+            logger.error(f"Job {job_id}: Failed to fetch YouTube metadata: {e}")
+            raise DownloadFailedError(f"Failed to fetch video metadata: {str(e)}")
         
         # Step 1: Download video (5-15%)
         update_progress(5, JobStatus.DOWNLOADING, "Starting download...")
-        video_path, audio_path = download_video(youtube_url, job_id)
+        # Pass duration from metadata to skip redundant yt-dlp metadata fetch
+        duration = metadata.get("duration_seconds") if metadata else None
+        video_path, audio_path = download_video(youtube_url, job_id, expected_duration=duration)
         update_progress(15, JobStatus.DOWNLOADING, "Download completed")
         
         # Step 2: Transcribe audio (15-35%) - Skip if disabled

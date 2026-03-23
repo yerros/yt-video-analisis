@@ -36,7 +36,7 @@ class BulkAnalyzeRequest(BaseModel):
     channel_url: str
     max_results: Optional[int] = None  # None = all videos
     skip_existing: bool = True  # Skip URLs that already exist in database
-    disable_transcript: bool = False  # Skip audio transcription
+    disable_transcript: bool = True  # Skip audio transcription (disabled by default)
 
 
 @router.post("", response_model=JobResponse, status_code=status.HTTP_201_CREATED)

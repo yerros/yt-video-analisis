@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, String, Text
+from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from pgvector.sqlalchemy import Vector
 
@@ -41,9 +41,9 @@ class Job(Base):
     tags = Column(JSON, nullable=True)  # Array of tags
     category_id = Column(String(50), nullable=True)
     published_at = Column(DateTime, nullable=True)
-    view_count = Column(Integer, nullable=True)
-    like_count = Column(Integer, nullable=True)
-    comment_count = Column(Integer, nullable=True)
+    view_count = Column(BigInteger, nullable=True)  # BIGINT to support billions of views
+    like_count = Column(BigInteger, nullable=True)  # BIGINT to support billions of likes
+    comment_count = Column(BigInteger, nullable=True)  # BIGINT to support millions of comments
     thumbnail_url = Column(Text, nullable=True)
     
     # English translations for non-English content
@@ -51,7 +51,7 @@ class Job(Base):
     description_en = Column(Text, nullable=True)
     
     # Processing options
-    disable_transcript = Column(Boolean, nullable=False, default=False)
+    disable_transcript = Column(Boolean, nullable=False, default=True)  # Default: transcription disabled
     
     status = Column(String(20), nullable=False, default=JobStatus.PENDING.value)
     progress = Column(Integer, nullable=False, default=0)  # 0-100
