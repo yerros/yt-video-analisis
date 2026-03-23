@@ -83,3 +83,12 @@ celerybeat.pid
 
 # Alembic
 backend/alembic/versions/*.pyc
+
+# Docker
+.dockerignore
+
+# Backups
+backups/
+
+# Monitoring
+monitoring.yml

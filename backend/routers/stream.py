@@ -6,11 +6,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from redis import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
 from db.session import get_db
 from models.job import Job
 
@@ -20,13 +18,11 @@ router = APIRouter()
 @router.get("/{job_id}/stream")
 async def stream_job_progress(
     job_id: UUID,
-    db: AsyncSession = Depends(get_db),
 ) -> StreamingResponse:
     """Stream real-time job progress via SSE.
     
     Args:
         job_id: Job UUID.
-        db: Database session.
         
     Returns:
         SSE stream of job progress events.
@@ -34,83 +30,79 @@ async def stream_job_progress(
     Raises:
         HTTPException: If job not found.
     """
-    # Verify job exists
-    result = await db.execute(select(Job).where(Job.id == job_id))
-    job = result.scalar_one_or_none()
+    from db.session import async_session_maker
     
-    if not job:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Job {job_id} not found",
-        )
+    # Verify job exists first
+    async with async_session_maker() as session:
+        result = await session.execute(select(Job).where(Job.id == job_id))
+        job = result.scalar_one_or_none()
+        
+        if not job:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Job {job_id} not found",
+            )
     
     async def event_generator() -> AsyncGenerator[str, None]:
         """Generate SSE events for job progress."""
         import json
-        redis_client = Redis.from_url(settings.redis_url, decode_responses=True)
-        pubsub = redis_client.pubsub()
-        channel = f"job:{job_id}"
         
         try:
-            # Check if job is already completed
-            result = await db.execute(select(Job).where(Job.id == job_id))
-            current_job = result.scalar_one_or_none()
-            
-            if current_job and current_job.status in ["done", "failed"]:
-                # Job already finished, send completion message immediately
-                connected_msg = json.dumps({"event": "connected", "job_id": str(job_id)})
-                yield f"data: {connected_msg}\n\n"
-                
-                completion_data = {
-                    "job_id": str(job_id),
-                    "progress": current_job.progress,
-                    "status": current_job.status.value,
-                    "message": "Job already completed" if current_job.status == "done" else "Job failed",
-                    "error": current_job.error_message,
-                    "timestamp": current_job.updated_at.isoformat() if current_job.updated_at else None
-                }
-                yield f"data: {json.dumps(completion_data)}\n\n"
-                
-                done_msg = json.dumps({"event": "done"})
-                yield f"data: {done_msg}\n\n"
-                return
-            
-            # Subscribe to job-specific channel
-            pubsub.subscribe(channel)
-            
             # Send initial connection message
             connected_msg = json.dumps({"event": "connected", "job_id": str(job_id)})
             yield f"data: {connected_msg}\n\n"
             
-            # Listen for messages
+            last_progress = -1
+            last_status = None
+            
+            # Poll database for updates (create new session each time)
             while True:
-                message = pubsub.get_message(timeout=1.0)
-                
-                if message and message["type"] == "message":
-                    data = message["data"]
-                    yield f"data: {data}\n\n"
+                async with async_session_maker() as session:
+                    result = await session.execute(select(Job).where(Job.id == job_id))
+                    current_job = result.scalar_one_or_none()
+                    
+                    if not current_job:
+                        # Job deleted or not found
+                        error_data = {
+                            "job_id": str(job_id),
+                            "error": "Job not found",
+                            "status": "failed"
+                        }
+                        yield f"data: {json.dumps(error_data)}\n\n"
+                        break
+                    
+                    # Check if there's an update
+                    if (current_job.progress != last_progress or 
+                        current_job.status != last_status):
+                        
+                        last_progress = current_job.progress
+                        last_status = current_job.status
+                        
+                        progress_data = {
+                            "job_id": str(job_id),
+                            "progress": current_job.progress,
+                            "status": current_job.status,
+                            "message": current_job.error_message if current_job.status == "failed" else f"Progress: {current_job.progress}%",
+                            "error": current_job.error_message,
+                            "timestamp": current_job.updated_at.isoformat() if current_job.updated_at else None
+                        }
+                        yield f"data: {json.dumps(progress_data)}\n\n"
                     
                     # Check if job is completed or failed
-                    try:
-                        progress_data = json.loads(data)
-                        if progress_data.get("status") in ["done", "failed"]:
-                            # Send final message and close
-                            done_msg = json.dumps({"event": "done"})
-                            yield f"data: {done_msg}\n\n"
-                            break
-                    except json.JSONDecodeError:
-                        pass
+                    if current_job.status in ["done", "failed"]:
+                        done_msg = json.dumps({"event": "done"})
+                        yield f"data: {done_msg}\n\n"
+                        break
                 
-                # Allow other tasks to run
-                await asyncio.sleep(0.1)
+                # Poll every 500ms
+                await asyncio.sleep(0.5)
                 
         except asyncio.CancelledError:
             # Client disconnected
             pass
-        finally:
-            pubsub.unsubscribe(channel)
-            pubsub.close()
-            redis_client.close()
+        except Exception as e:
+            error_msg = json.dumps({"error": str(e), "status": "failed"})
+            yield f"data: {error_msg}\n\n"
     
     return StreamingResponse(
         event_generator(),

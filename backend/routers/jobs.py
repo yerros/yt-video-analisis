@@ -46,16 +46,57 @@ async def create_job(
 ) -> JobResponse:
     """Create a new video analysis job.
     
+    If the URL already exists in the database, returns the existing job instead of creating a duplicate.
+    
     Args:
         body: Job creation request with YouTube URL.
         db: Database session.
         
     Returns:
-        Created job details.
+        Created or existing job details.
     """
-    # Create new job
+    youtube_url = str(body.youtube_url)
+    
+    # Check if URL already exists
+    result = await db.execute(
+        select(Job).where(Job.youtube_url == youtube_url)
+    )
+    existing_job = result.scalar_one_or_none()
+    
+    if existing_job:
+        # Return existing job instead of creating duplicate
+        return JobResponse(
+            id=existing_job.id,
+            youtube_url=existing_job.youtube_url,
+            video_title=existing_job.video_title,
+            video_duration=existing_job.video_duration,
+            status=existing_job.status,
+            progress=existing_job.progress,
+            transcript=existing_job.transcript,
+            frames_count=existing_job.frames_count,
+            analysis=existing_job.analysis,
+            error_message=existing_job.error_message,
+            created_at=existing_job.created_at,
+            updated_at=existing_job.updated_at,
+            youtube_metadata=existing_job.youtube_metadata,
+            channel_title=existing_job.channel_title,
+            channel_id=existing_job.channel_id,
+            description=existing_job.description,
+            tags=existing_job.tags,
+            category_id=existing_job.category_id,
+            published_at=existing_job.published_at,
+            view_count=existing_job.view_count,
+            like_count=existing_job.like_count,
+            comment_count=existing_job.comment_count,
+            thumbnail_url=existing_job.thumbnail_url,
+            title_en=existing_job.title_en,
+            description_en=existing_job.description_en,
+            disable_transcript=existing_job.disable_transcript,
+        )
+    
+    # Create new job if URL doesn't exist
     job = Job(
-        youtube_url=str(body.youtube_url),
+        youtube_url=youtube_url,
         status=JobStatus.PENDING,
         progress=0,
         disable_transcript=body.disable_transcript,
