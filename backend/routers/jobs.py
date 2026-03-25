@@ -649,25 +649,29 @@ async def bulk_analyze_channel(
 @router.post("/process-queue", status_code=status.HTTP_200_OK)
 async def process_pending_jobs_queue(
     delay_seconds: int = 30,  # Delay between jobs to avoid bot detection
-    batch_size: int = 10,  # Number of jobs to process in this batch
+    mode: str = "sequential",  # "sequential" or "batch"
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Start processing pending jobs one by one with delays to avoid bot detection.
+    """Start processing pending jobs sequentially with delays to avoid bot detection.
     
-    This endpoint will:
-    1. Find pending jobs (status=PENDING, progress=0)
-    2. Queue them to Celery with delays between each job
-    3. Return info about queued jobs
+    This endpoint implements TRUE SEQUENTIAL PROCESSING:
+    - Process 1 job completely (0% -> 100%)
+    - Wait for delay_seconds
+    - Process next job
+    - Repeat until no more pending jobs
+    
+    This is different from batch mode which queues multiple jobs at once with countdowns.
+    Sequential mode ensures only 1 job is downloading from YouTube at a time.
     
     Args:
         delay_seconds: Delay in seconds between each job (default: 30s)
-        batch_size: Maximum number of jobs to queue in this request (default: 10)
+        mode: Processing mode - "sequential" (recommended) or "batch" (legacy)
         db: Database session.
         
     Returns:
-        Information about queued jobs.
+        Information about the started queue processor.
     """
-    import asyncio
+    from tasks.queue_processor import start_next_job
     
     try:
         # Find pending jobs
@@ -676,54 +680,66 @@ async def process_pending_jobs_queue(
             .where(Job.status == JobStatus.PENDING)
             .where(Job.progress == 0)
             .order_by(Job.created_at)
-            .limit(batch_size)
         )
         pending_jobs = result.scalars().all()
         
         if not pending_jobs:
             return {
                 "message": "No pending jobs found",
-                "jobs_queued": 0,
-                "remaining_pending": 0,
+                "status": "no_jobs",
+                "jobs_pending": 0,
             }
         
-        # Get total remaining pending jobs
-        count_result = await db.execute(
-            select(func.count())
-            .select_from(Job)
-            .where(Job.status == JobStatus.PENDING)
-            .where(Job.progress == 0)
-        )
-        total_pending = count_result.scalar()
+        total_pending = len(pending_jobs)
         
-        queued_jobs = []
-        
-        # Queue jobs one by one with delays
-        for i, job in enumerate(pending_jobs):
-            # Calculate eta (estimated time of arrival) for staggered execution
-            import time as time_module
-            eta_timestamp = time_module.time() + (i * delay_seconds)
+        # Sequential mode: Start the chain reaction
+        # The first job will trigger the next, and so on
+        if mode == "sequential":
+            # Start processing the first job
+            # It will automatically trigger the next one after completion + delay
+            start_next_job.apply_async(args=[delay_seconds])
             
-            # Queue the job with ETA to stagger execution
-            run_pipeline.apply_async(
-                args=[str(job.id)],
-                countdown=i * delay_seconds  # Delay execution by i * delay_seconds
-            )
-            
-            queued_jobs.append({
-                "job_id": str(job.id),
-                "video_url": job.youtube_url,
-                "video_title": job.video_title,
-                "eta_seconds": i * delay_seconds,
-            })
+            return {
+                "status": "started",
+                "message": f"Started sequential processing of {total_pending} job(s)",
+                "mode": "sequential",
+                "jobs_pending": total_pending,
+                "delay_seconds": delay_seconds,
+                "description": "Jobs will be processed one at a time. Each job completes fully before the next starts.",
+                "queue_info": [
+                    {
+                        "position": i + 1,
+                        "job_id": str(job.id),
+                        "video_url": job.youtube_url,
+                        "estimated_start_minutes": i * (delay_seconds / 60),
+                    }
+                    for i, job in enumerate(pending_jobs[:10])  # Show first 10
+                ],
+            }
         
-        return {
-            "message": f"Queued {len(queued_jobs)} jobs with {delay_seconds}s delay between each",
-            "jobs_queued": len(queued_jobs),
-            "remaining_pending": total_pending - len(queued_jobs),
-            "delay_seconds": delay_seconds,
-            "queued_jobs": queued_jobs,
-        }
+        # Legacy batch mode (all jobs queued with countdown)
+        else:
+            queued_jobs = []
+            for i, job in enumerate(pending_jobs):
+                run_pipeline.apply_async(
+                    args=[str(job.id)],
+                    countdown=i * delay_seconds
+                )
+                queued_jobs.append({
+                    "job_id": str(job.id),
+                    "video_url": job.youtube_url,
+                    "eta_seconds": i * delay_seconds,
+                })
+            
+            return {
+                "status": "queued",
+                "message": f"Queued {len(queued_jobs)} jobs with {delay_seconds}s countdown between each",
+                "mode": "batch",
+                "jobs_queued": len(queued_jobs),
+                "delay_seconds": delay_seconds,
+                "warning": "Batch mode queues all jobs at once. Use mode=sequential for true one-by-one processing.",
+                "queued_jobs": queued_jobs,
+            }
         
     except Exception as e:
         raise HTTPException(

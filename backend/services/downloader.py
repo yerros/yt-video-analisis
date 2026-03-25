@@ -203,12 +203,15 @@ def download_video(youtube_url: str, job_id: str, expected_duration: int = None)
         "--retry-sleep", "exp=1:5",
     ]
     
-    # Add cookies if available
+    # Add cookies - try file first, then browser
     if settings.youtube_cookies_path and Path(settings.youtube_cookies_path).exists():
         base_args.extend(["--cookies", settings.youtube_cookies_path])
         logger.info(f"Using cookies file: {settings.youtube_cookies_path}")
+    elif settings.youtube_cookies_browser:
+        base_args.extend(["--cookies-from-browser", settings.youtube_cookies_browser])
+        logger.info(f"Using cookies from browser: {settings.youtube_cookies_browser}")
     else:
-        logger.warning("No cookies file provided - downloads may be blocked by YouTube")
+        logger.warning("No cookies configured - downloads may be blocked by YouTube")
     
     try:
         # If expected_duration is provided, skip metadata fetch

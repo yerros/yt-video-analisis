@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     
     # yt-dlp
     youtube_cookies_path: str = ""  # Optional: Path to cookies.txt file for YouTube authentication
+    youtube_cookies_browser: str = "chrome"  # Browser to extract cookies from (chrome, firefox, edge, safari, etc.)
 
     # Whisper
     whisper_model: str = "mlx-community/whisper-large-v3-mlx"

@@ -10,7 +10,7 @@ celery_app = Celery(
     "video_analysis",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["tasks.pipeline_sync", "tasks.embedding", "tasks.job_monitor"],
+    include=["tasks.pipeline_sync", "tasks.embedding", "tasks.job_monitor", "tasks.queue_processor", "tasks.health_check"],
 )
 
 # Celery configuration

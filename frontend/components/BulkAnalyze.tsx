@@ -36,8 +36,10 @@ export function BulkAnalyze() {
   const [disableTranscript, setDisableTranscript] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchingVideos, setFetchingVideos] = useState(false);
+  const [processingQueue, setProcessingQueue] = useState(false);
   const [channelInfo, setChannelInfo] = useState<any>(null);
   const [result, setResult] = useState<BulkAnalyzeResult | null>(null);
+  const [queueResult, setQueueResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleFetchVideos = async () => {
@@ -94,8 +96,24 @@ export function BulkAnalyze() {
     setSkipExisting(true);
     setDisableTranscript(false);
     setResult(null);
+    setQueueResult(null);
     setError(null);
     setChannelInfo(null);
+  };
+
+  const handleProcessQueue = async () => {
+    setProcessingQueue(true);
+    setError(null);
+
+    try {
+      const response = await api.jobs.processQueue(30, 10, 'sequential'); // 30s delay, sequential mode
+      setQueueResult(response);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to start processing queue";
+      setError(errorMessage);
+    } finally {
+      setProcessingQueue(false);
+    }
   };
 
   return (
@@ -306,7 +324,7 @@ export function BulkAnalyze() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-green-900">Bulk Analysis Started!</h3>
+                  <h3 className="text-xl font-semibold text-green-900">Jobs Created Successfully!</h3>
                   <p className="text-sm text-green-700">{result.channel_title}</p>
                 </div>
               </div>
@@ -330,6 +348,100 @@ export function BulkAnalyze() {
                 </div>
               </div>
             </div>
+
+            {/* Important Notice - Processing Queue */}
+            {result.jobs_created > 0 && !queueResult && (
+              <div className="bg-blue-50 border border-blue-300 rounded-lg p-6">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-lg font-semibold text-blue-900 mb-2">Ready to Process</h4>
+                    <p className="text-sm text-blue-800 mb-4">
+                      {result.jobs_created} job(s) have been created and are waiting to be processed. 
+                      Click the button below to start processing them one by one with 30-second delays 
+                      between each job to avoid YouTube bot detection.
+                    </p>
+                    <button
+                      onClick={handleProcessQueue}
+                      disabled={processingQueue}
+                      className="px-5 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                    >
+                      {processingQueue ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Starting Queue...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Start Processing Queue (30s delay between jobs)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Queue Processing Result */}
+            {queueResult && (
+              <div className="bg-indigo-50 border border-indigo-300 rounded-lg p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-indigo-900">Sequential Processing Started!</h4>
+                    <p className="text-sm text-indigo-700">{queueResult.message || queueResult.description}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                    <p className="text-2xl font-bold text-indigo-900">{queueResult.jobs_pending || queueResult.jobs_queued}</p>
+                    <p className="text-xs text-indigo-700 mt-1">Jobs in Queue</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                    <p className="text-2xl font-bold text-indigo-900">{queueResult.mode || 'sequential'}</p>
+                    <p className="text-xs text-indigo-700 mt-1">Processing Mode</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                    <p className="text-2xl font-bold text-indigo-900">{queueResult.delay_seconds}s</p>
+                    <p className="text-xs text-indigo-700 mt-1">Delay Between Jobs</p>
+                  </div>
+                </div>
+                
+                {/* Queue Info - First 5 jobs */}
+                {queueResult.queue_info && queueResult.queue_info.length > 0 && (
+                  <div className="mt-4 bg-white rounded-lg p-4 border border-indigo-200">
+                    <h5 className="text-sm font-semibold text-indigo-900 mb-3">Queue Status (First {Math.min(5, queueResult.queue_info.length)} jobs)</h5>
+                    <div className="space-y-2">
+                      {queueResult.queue_info.slice(0, 5).map((job: any) => (
+                        <div key={job.job_id} className="flex items-center justify-between text-xs">
+                          <span className="text-indigo-700">Position {job.position}</span>
+                          <span className="text-gray-600 truncate flex-1 mx-2">{job.video_url}</span>
+                          <span className="text-indigo-600 font-medium">
+                            ~{job.estimated_start_minutes < 1 ? 'Now' : Math.ceil(job.estimated_start_minutes) + 'min'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <p className="text-xs text-indigo-600 mt-4">
+                  Jobs are being processed one at a time in sequential order. You can view their progress in the History page.
+                </p>
+              </div>
+            )}
 
             {/* Created Jobs */}
             {result.created_jobs.length > 0 && (

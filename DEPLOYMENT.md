@@ -120,15 +120,52 @@ OPENAI_API_KEY=sk-proj-...
 # YouTube Data API v3 (Required)
 YOUTUBE_API_KEY=AIza...
 
-# YouTube Cookies (Optional - prevents bot detection)
+# YouTube Download Configuration (mencegah bot detection)
+# Option 1: Path to cookies.txt file (manual export)
 YOUTUBE_COOKIES_PATH=./www.youtube.com_cookies.txt
+
+# Option 2: Extract cookies from browser automatically (jika path tidak diset)
+# Supported: chrome, firefox, edge, safari, opera, brave, chromium
+YOUTUBE_COOKIES_BROWSER=chrome
 ```
 
-**How to get YouTube cookies:**
+### YouTube Cookies Setup
+
+**Option 1: Cookies dari Browser Otomatis (Recommended)**
+
+yt-dlp versi terbaru sudah support ekstrak cookies langsung dari browser tanpa perlu export manual:
+
+```env
+# Set browser yang Anda gunakan untuk login YouTube
+YOUTUBE_COOKIES_BROWSER=chrome  # atau firefox, edge, safari, etc
+```
+
+**Supported browsers:**
+- `chrome` - Google Chrome
+- `firefox` - Mozilla Firefox
+- `edge` - Microsoft Edge
+- `safari` - Safari (macOS only)
+- `brave` - Brave Browser
+- `opera` - Opera
+- `chromium` - Chromium
+
+**Catatan:** Pastikan Anda sudah login ke YouTube di browser tersebut.
+
+**Option 2: Export Manual Cookies.txt**
+
+Jika cookies from browser tidak bekerja, export manual:
+
 1. Install browser extension: [Get cookies.txt](https://chrome.google.com/webstore/detail/get-cookiestxt/bgaddhkoddajcdgocldbbfleckgcbcid)
-2. Login to YouTube
+2. Login ke YouTube
 3. Export cookies as `www.youtube.com_cookies.txt`
-4. Place file in project root
+4. Letakkan file di project root
+5. Set `YOUTUBE_COOKIES_PATH=./www.youtube.com_cookies.txt`
+
+**Tips untuk Menghindari Bot Detection:**
+- ✅ Gunakan cookies (from browser atau file)
+- ✅ Sequential queue processing dengan delay 30s antar job
+- ✅ Jangan download terlalu banyak video sekaligus (max 10-20/batch)
+- ✅ Update yt-dlp ke versi terbaru secara rutin
 
 ### Storage Configuration
 

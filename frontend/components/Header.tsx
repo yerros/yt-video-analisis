@@ -51,6 +51,7 @@ export function Header() {
     { href: "/history", label: "History", icon: "history" },
     { href: "/chat", label: "Chat", icon: "chat" },
     { href: "/usage", label: "Usage", icon: "usage" },
+    { href: "/worker", label: "Worker", icon: "worker" },
   ];
 
   return (

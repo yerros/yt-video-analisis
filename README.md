@@ -265,11 +265,31 @@ TEMP_DIR=/tmp/video-analysis
 YOUTUBE_COOKIES_PATH=/path/to/cookies.txt
 ```
 
-### YouTube Cookies Setup (Optional tapi RECOMMENDED untuk Bulk Analysis)
+### YouTube Cookies Setup (RECOMMENDED untuk Bulk Analysis)
 
-Jika Anda mengalami error **"Sign in to confirm you're not a bot"** saat download banyak video, Anda perlu menggunakan cookies dari browser:
+**yt-dlp versi terbaru (2026.3.17)** sudah support ekstrak cookies langsung dari browser tanpa perlu export manual!
 
-**Cara Export Cookies:**
+**Option 1: Cookies dari Browser Otomatis (RECOMMENDED)**
+
+```bash
+# Edit .env file
+YOUTUBE_COOKIES_BROWSER=chrome  # atau firefox, edge, safari
+```
+
+**Supported browsers:**
+- `chrome` - Google Chrome
+- `firefox` - Mozilla Firefox  
+- `edge` - Microsoft Edge
+- `safari` - Safari (macOS)
+- `brave` - Brave Browser
+- `opera` - Opera
+- `chromium` - Chromium
+
+**Pastikan:** Anda sudah login ke YouTube di browser tersebut.
+
+**Option 2: Export Manual Cookies.txt (Fallback)**
+
+Jika cookies from browser tidak bekerja:
 
 1. **Install Browser Extension:**
    - Chrome: [Get cookies.txt LOCALLY](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
@@ -278,12 +298,12 @@ Jika Anda mengalami error **"Sign in to confirm you're not a bot"** saat downloa
 2. **Export Cookies:**
    - Login ke YouTube di browser
    - Klik extension dan pilih "Export" untuk youtube.com
-   - Save sebagai `youtube_cookies.txt`
+   - Save sebagai `www.youtube.com_cookies.txt` di root project
 
 3. **Configure:**
    ```bash
-   # Di file .env, tambahkan:
-   YOUTUBE_COOKIES_PATH=/path/to/youtube_cookies.txt
+   # Di file .env, set path:
+   YOUTUBE_COOKIES_PATH=/path/to/www.youtube.com_cookies.txt
    ```
 
 4. **Restart Celery Worker:**
@@ -340,10 +360,16 @@ Jika muncul error **"Sign in to confirm you're not a bot"** saat bulk analysis:
 3. Restart Celery worker: `make restart` atau `./restart.sh`
 
 Solusi lain yang sudah diimplementasikan:
+- ✅ Sequential queue processing dengan delay 30 detik antar job
 - ✅ Automatic retry dengan exponential backoff (3x retry)
 - ✅ User-agent yang lebih natural (Chrome)
 - ✅ Referer header (youtube.com)
 - ✅ Fragment retries untuk download yang terputus
+
+Jika masih gagal setelah menggunakan cookies:
+- Cookies sudah expired (export ulang dari browser)
+- IP Anda di-rate limit YouTube (tunggu beberapa jam atau gunakan VPN)
+- Video memang private/restricted
 
 Jika masih gagal setelah menggunakan cookies, kemungkinan:
 - Cookies sudah expired (export ulang)
