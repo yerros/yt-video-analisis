@@ -65,7 +65,7 @@ services:
       TEMP_DIR: /tmp/video-analysis
       MAX_VIDEO_DURATION: ${MAX_VIDEO_DURATION:-1800}
       MAX_FRAMES: ${MAX_FRAMES:-30}
-      WHISPER_MODEL: ${WHISPER_MODEL:-mlx-community/whisper-large-v3-mlx}
+
       
       # Supabase Storage (optional)
       SUPABASE_URL: ${SUPABASE_URL:-}
@@ -81,7 +81,7 @@ services:
       - video_temp:/tmp/video-analysis
       - ./backend:/app:ro
       # Mount cookies file if provided
-      - ${YOUTUBE_COOKIES_PATH:-/dev/null}:${YOUTUBE_COOKIES_PATH:-/dev/null}:ro
+      #- ${YOUTUBE_COOKIES_PATH:-/dev/null}:${YOUTUBE_COOKIES_PATH:-/dev/null}:ro
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
@@ -124,7 +124,7 @@ services:
       TEMP_DIR: /tmp/video-analysis
       MAX_VIDEO_DURATION: ${MAX_VIDEO_DURATION:-1800}
       MAX_FRAMES: ${MAX_FRAMES:-30}
-      WHISPER_MODEL: ${WHISPER_MODEL:-mlx-community/whisper-large-v3-mlx}
+
       
       # Supabase Storage (optional)
       SUPABASE_URL: ${SUPABASE_URL:-}
@@ -139,7 +139,7 @@ services:
     volumes:
       - video_temp:/tmp/video-analysis
       - ./backend:/app:ro
-      - ${YOUTUBE_COOKIES_PATH:-/dev/null}:${YOUTUBE_COOKIES_PATH:-/dev/null}:ro
+      #- ${YOUTUBE_COOKIES_PATH:-/dev/null}:${YOUTUBE_COOKIES_PATH:-/dev/null}:ro
     depends_on:
       postgres:
         condition: service_healthy

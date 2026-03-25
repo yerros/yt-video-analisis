@@ -195,9 +195,6 @@ MAX_FRAMES=30
 # Frontend
 FRONTEND_PORT=3000
 NEXT_PUBLIC_API_URL=http://localhost:8000  # Change to your domain in production
-
-# Worker
-WHISPER_MODEL=mlx-community/whisper-large-v3-mlx
 ```
 
 ---

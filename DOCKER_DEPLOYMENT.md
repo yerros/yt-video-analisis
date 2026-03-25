@@ -91,7 +91,6 @@ REDIS_PORT=6379
 TEMP_DIR=/tmp/video-analysis
 MAX_VIDEO_DURATION=1800
 MAX_FRAMES=30
-WHISPER_MODEL=mlx-community/whisper-large-v3-mlx
 
 # YouTube Cookies (OPTIONAL tapi recommended)
 YOUTUBE_COOKIES_PATH=/app/cookies.txt
@@ -300,7 +299,7 @@ services:
       TEMP_DIR: /tmp/video-analysis
       MAX_VIDEO_DURATION: 1800
       MAX_FRAMES: 30
-      WHISPER_MODEL: mlx-community/whisper-large-v3-mlx
+
     volumes:
       - video_temp:/tmp/video-analysis
     ports:
@@ -332,7 +331,7 @@ services:
       TEMP_DIR: /tmp/video-analysis
       MAX_VIDEO_DURATION: 1800
       MAX_FRAMES: 30
-      WHISPER_MODEL: mlx-community/whisper-large-v3-mlx
+
     volumes:
       - video_temp:/tmp/video-analysis
     depends_on:
@@ -581,7 +580,6 @@ YOUTUBE_COOKIES_BROWSER=chrome         # Optional fallback
 TEMP_DIR=/tmp/video-analysis
 MAX_VIDEO_DURATION=1800        # 30 minutes
 MAX_FRAMES=30                  # Frame extraction limit
-WHISPER_MODEL=mlx-community/whisper-large-v3-mlx
 ```
 
 #### Worker Monitor

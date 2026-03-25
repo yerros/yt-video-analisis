@@ -14,7 +14,7 @@ Aplikasi web untuk menganalisa konten video YouTube secara otomatis menggunakan 
 ## Features
 
 - 🎥 Download video YouTube otomatis
-- 🎤 Transkripsi audio menggunakan mlx-whisper (optimized for Apple Silicon)
+- 🎤 Transkripsi audio menggunakan OpenAI Whisper API
 - 🖼️ Ekstraksi key frames dengan scene detection
 - 🤖 Analisa mendalam menggunakan GPT-4o multimodal
 - 📊 Real-time progress tracking dengan SSE
@@ -37,7 +37,7 @@ Aplikasi web untuk menganalisa konten video YouTube secara otomatis menggunakan 
 
 ### Processing
 - yt-dlp (video download)
-- mlx-whisper (audio transcription)
+- OpenAI Whisper API (audio transcription)
 - OpenCV + PySceneDetect (frame extraction)
 - OpenAI GPT-4o (AI analysis)
 
@@ -247,7 +247,7 @@ make lint              # Lint code (ruff + eslint)
 ## Processing Pipeline
 
 1. **Download** (10%) - Download video and extract audio using yt-dlp
-2. **Transcribe** (30%) - Transcribe audio to text using mlx-whisper
+2. **Transcribe** (30%) - Transcribe audio to text using OpenAI Whisper API
 3. **Extract Frames** (60%) - Detect scenes and capture key frames
 4. **Analyze** (85%) - Send transcript + frames to GPT-4o for analysis
 5. **Done** (100%) - Save results to database
@@ -262,9 +262,6 @@ MAX_VIDEO_DURATION=1800
 
 # Maximum frames to extract
 MAX_FRAMES=30
-
-# Whisper model
-WHISPER_MODEL=mlx-community/whisper-large-v3-mlx
 
 # Temporary directory for processing
 TEMP_DIR=/tmp/video-analysis
@@ -325,11 +322,11 @@ Jika cookies from browser tidak bekerja:
 **Catatan:** Cookies akan expired setelah beberapa waktu, jadi perlu di-export ulang jika mulai gagal lagi.
 
 
-## Platform Notes (macOS M1/M2)
+## Platform Notes
 
-- Uses Python native ARM (not Rosetta) for optimal performance
-- mlx-whisper leverages Apple Neural Engine for fast transcription
-- All dependencies installed natively (no Docker)
+- Uses Python 3.11+ for optimal compatibility
+- OpenAI Whisper API for fast and accurate transcription
+- All dependencies work cross-platform (macOS, Linux, Windows)
 - opencv-python-headless used to avoid GUI dependencies
 
 ## Troubleshooting
