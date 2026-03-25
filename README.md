@@ -2,6 +2,15 @@
 
 Aplikasi web untuk menganalisa konten video YouTube secara otomatis menggunakan AI multimodal (GPT-4o).
 
+## 🚀 Quick Start
+
+**Production Deployment:**
+- 🐳 [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md) - Lengkap dengan monitoring, backup, security
+- ⚡ [Portainer Quick Start](./PORTAINER_QUICKSTART.md) - 5 menit setup via Portainer Stack
+- 🛠️ [Service Management Scripts](./scripts/README.md) - Automated start/stop/restart/status
+
+**Development Setup:** Lihat [Local Development](#setup) section di bawah
+
 ## Features
 
 - 🎥 Download video YouTube otomatis

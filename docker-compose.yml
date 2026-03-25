@@ -59,6 +59,7 @@ services:
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
       YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-}
+      YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-chrome}
       
       # Application
       TEMP_DIR: /tmp/video-analysis
@@ -97,15 +98,6 @@ services:
     restart: unless-stopped
     networks:
       - video-analysis-network
-    command: >
-      sh -c "
-        echo 'Waiting for database...' &&
-        sleep 5 &&
-        echo 'Running database migrations...' &&
-        alembic upgrade head &&
-        echo 'Starting backend server...' &&
-        uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
-      "
 
   # Celery Worker
   celery-worker:
@@ -126,6 +118,7 @@ services:
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
       YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-}
+      YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-chrome}
       
       # Application
       TEMP_DIR: /tmp/video-analysis
@@ -157,7 +150,40 @@ services:
     restart: unless-stopped
     networks:
       - video-analysis-network
-    command: celery -A celery_app worker --loglevel=info --pool=solo
+    command: celery -A celery_app worker --loglevel=info --pool=solo --time-limit=1800 --soft-time-limit=1500
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d celery@$HOSTNAME"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Worker Monitor - Auto-restart hung workers
+  worker-monitor:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: video-analysis-worker-monitor
+    environment:
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      
+      # Monitor Configuration
+      WORKER_HEALTH_CHECK_INTERVAL: ${WORKER_HEALTH_CHECK_INTERVAL:-60}
+      WORKER_HEALTH_CHECK_TIMEOUT: ${WORKER_HEALTH_CHECK_TIMEOUT:-10}
+      WORKER_MAX_RESTART_ATTEMPTS: ${WORKER_MAX_RESTART_ATTEMPTS:-3}
+      WORKER_RESTART_COOLDOWN: ${WORKER_RESTART_COOLDOWN:-300}
+    volumes:
+      - ./backend:/app:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      celery-worker:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - video-analysis-network
+    command: python scripts/worker_monitor.py
 
   # Celery Beat (Scheduler)
   celery-beat:
