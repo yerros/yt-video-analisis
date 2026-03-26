@@ -2,6 +2,7 @@
 
 import logging
 import re
+import shutil
 import subprocess
 import time
 from datetime import datetime
@@ -192,8 +193,14 @@ def download_video(youtube_url: str, job_id: str, expected_duration: int = None)
     video_output = temp_dir / "video.mp4"
     audio_output = temp_dir / "audio.mp3"
     
-    # Use system yt-dlp binary (more reliable than Python library)
-    yt_dlp_bin = "/opt/homebrew/bin/yt-dlp"
+    # Find yt-dlp binary dynamically (works on any system)
+    yt_dlp_bin = shutil.which("yt-dlp")
+    if not yt_dlp_bin:
+        raise DownloadFailedError(
+            "yt-dlp not found in PATH. Please install: pip install yt-dlp"
+        )
+    
+    logger.info(f"Using yt-dlp from: {yt_dlp_bin}")
     
     # Base command args
     base_args = [
