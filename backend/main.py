@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import jobs, stream, frames, statistics, chat, worker
+from routers import jobs, stream, frames, statistics, chat, worker, export
 
 app = FastAPI(
     title="Video Analysis AI API",
@@ -29,6 +29,7 @@ app.include_router(frames.router, prefix="/api", tags=["frames"])
 app.include_router(statistics.router, prefix="/api", tags=["statistics"])
 app.include_router(chat.router, prefix="/api", tags=["chat"])
 app.include_router(worker.router, prefix="/api/worker", tags=["worker"])
+app.include_router(export.router, prefix="/api", tags=["export-import"])
 
 
 @app.get("/")

@@ -153,4 +153,41 @@ export const api = {
       await apiClient.delete(`/api/chat/sessions/${sessionId}`);
     },
   },
+
+  export: {
+    listExportableJobs: async (): Promise<Array<{
+      id: string;
+      title: string;
+      duration: number;
+      frames_count: number;
+      created_at: string;
+    }>> => {
+      const response = await apiClient.get("/api/export/jobs");
+      return response.data;
+    },
+
+    exportJob: async (jobId: string): Promise<Blob> => {
+      const response = await apiClient.post(`/api/export/jobs/${jobId}`, null, {
+        responseType: "blob",
+      });
+      return response.data;
+    },
+
+    importJob: async (file: File, skipExisting: boolean = true): Promise<{
+      success: boolean;
+      job_id: string;
+      message: string;
+      skipped: boolean;
+    }> => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await apiClient.post(`/api/export/import?skip_existing=${skipExisting}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      return response.data;
+    },
+  },
 };

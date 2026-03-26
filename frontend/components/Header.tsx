@@ -50,6 +50,7 @@ export function Header() {
     { href: "/", label: "Home", icon: "home" },
     { href: "/history", label: "History", icon: "history" },
     { href: "/chat", label: "Chat", icon: "chat" },
+    { href: "/export", label: "Export", icon: "export" },
     { href: "/usage", label: "Usage", icon: "usage" },
     { href: "/worker", label: "Worker", icon: "worker" },
   ];
