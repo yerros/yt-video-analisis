@@ -352,7 +352,7 @@ export default function WorkerStatusPage() {
                 <p className="text-sm font-medium text-orange-900">Worker is unhealthy</p>
                 <p className="text-sm text-orange-700 mt-1">
                   The worker is running but not responding to health checks. This might be normal if
-                  it's processing a heavy task. If this persists, consider restarting the worker.
+                  it&apos;s processing a heavy task. If this persists, consider restarting the worker.
                 </p>
               </div>
             </div>
