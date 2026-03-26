@@ -48,7 +48,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
+# Copy application code (includes SQL export files)
 COPY --chown=appuser:appuser . .
 
 # Copy entrypoint script
