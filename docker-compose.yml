@@ -74,7 +74,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-      YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-/app/cookies/www.youtube.com_cookies.txt}
+      YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-/tmp/cookies/www.youtube.com_cookies.txt}
       YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-}
       # bgutil PO Token Provider URL (internal Docker network)
       BGUTIL_PROVIDER_URL: http://bgutil-provider:4416
@@ -95,7 +95,7 @@ services:
     volumes:
       - video_temp:/tmp/video-analysis
       - ./backend:/app:ro
-      - ./cookies:/app/cookies:ro
+      - ./cookies:/tmp/cookies:ro
     ports:
       - "${BACKEND_PORT:-1945}:8000"
     depends_on:
@@ -131,7 +131,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-      YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-/app/cookies/www.youtube.com_cookies.txt}
+      YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-/tmp/cookies/www.youtube.com_cookies.txt}
       YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-}
       # bgutil PO Token Provider URL (internal Docker network)
       BGUTIL_PROVIDER_URL: http://bgutil-provider:4416
@@ -152,7 +152,7 @@ services:
     volumes:
       - video_temp:/tmp/video-analysis
       - ./backend:/app:ro
-      - ./cookies:/app/cookies:ro
+      - ./cookies:/tmp/cookies:ro
     depends_on:
       postgres:
         condition: service_healthy
