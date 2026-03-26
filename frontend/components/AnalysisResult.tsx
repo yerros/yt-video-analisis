@@ -40,6 +40,7 @@ export function AnalysisResultComponent({ transcript, analysis, framesCount }: A
   const analysisData = analysis.summary;
   const aiUsage = analysis.ai_usage;
   const frames = analysisData.frames || [];
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -143,7 +144,7 @@ export function AnalysisResultComponent({ transcript, analysis, framesCount }: A
               <div key={idx} className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                 <div className="relative aspect-video bg-gray-100">
                   <img
-                    src={frame.path.startsWith('http') ? frame.path : `http://localhost:8000${frame.path}`}
+                    src={frame.path.startsWith('http') ? frame.path : `${apiUrl}${frame.path}`}
                     alt={`Frame ${idx + 1} at ${formatTime(frame.timestamp)}`}
                     className="w-full h-full object-cover"
                     loading="lazy"

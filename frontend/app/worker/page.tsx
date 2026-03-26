@@ -39,7 +39,8 @@ export default function WorkerStatusPage() {
 
   const fetchStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/worker/status');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/worker/status`);
       if (!response.ok) throw new Error('Failed to fetch worker status');
       const data = await response.json();
       setStatus(data);
@@ -58,7 +59,8 @@ export default function WorkerStatusPage() {
 
     setRestarting(true);
     try {
-      const response = await fetch('http://localhost:8000/api/worker/restart', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/api/worker/restart`, {
         method: 'POST',
       });
       if (!response.ok) throw new Error('Failed to restart worker');
