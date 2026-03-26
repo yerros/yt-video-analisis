@@ -95,7 +95,7 @@ services:
     volumes:
       - video_temp:/tmp/video-analysis
       - ./backend:/app:ro
-      - ./cookies:/tmp/cookies:ro
+      - ./cookies:/tmp/cookies:rw
     ports:
       - "${BACKEND_PORT:-1945}:8000"
     depends_on:
@@ -152,7 +152,7 @@ services:
     volumes:
       - video_temp:/tmp/video-analysis
       - ./backend:/app:ro
-      - ./cookies:/tmp/cookies:ro
+      - ./cookies:/tmp/cookies:rw
     depends_on:
       postgres:
         condition: service_healthy
