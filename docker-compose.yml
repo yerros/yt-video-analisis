@@ -68,33 +68,25 @@ services:
     environment:
       # Database
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-video_analysis}
-      
       # Redis
       REDIS_URL: redis://redis:6379/0
-      
       # OpenAI
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
       YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-/app/cookies/www.youtube.com_cookies.txt}
       YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-}
-      
       # bgutil PO Token Provider URL (internal Docker network)
       BGUTIL_PROVIDER_URL: http://bgutil-provider:4416
-      
       # Application
       TEMP_DIR: /tmp/video-analysis
       STORAGE_DIR: /tmp/video-analysis/storage
       MAX_VIDEO_DURATION: ${MAX_VIDEO_DURATION:-1800}
       MAX_FRAMES: ${MAX_FRAMES:-30}
-
-      
       # Supabase Storage (optional)
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_KEY: ${SUPABASE_KEY:-}
       SUPABASE_BUCKET: ${SUPABASE_BUCKET:-video-frames}
-      
       # AWS S3 Storage (optional)
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
@@ -103,7 +95,6 @@ services:
     volumes:
       - video_temp:/tmp/video-analysis
       - ./backend:/app:ro
-      # Mount cookies directory (read-only)
       - ./cookies:/app/cookies:ro
     ports:
       - "${BACKEND_PORT:-1945}:8000"
@@ -133,33 +124,25 @@ services:
     environment:
       # Database
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-video_analysis}
-      
       # Redis
       REDIS_URL: redis://redis:6379/0
-      
       # OpenAI
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
       YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-/app/cookies/www.youtube.com_cookies.txt}
       YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-}
-      
       # bgutil PO Token Provider URL (internal Docker network)
       BGUTIL_PROVIDER_URL: http://bgutil-provider:4416
-      
       # Application
       TEMP_DIR: /tmp/video-analysis
       STORAGE_DIR: /tmp/video-analysis/storage
       MAX_VIDEO_DURATION: ${MAX_VIDEO_DURATION:-1800}
       MAX_FRAMES: ${MAX_FRAMES:-30}
-
-      
       # Supabase Storage (optional)
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_KEY: ${SUPABASE_KEY:-}
       SUPABASE_BUCKET: ${SUPABASE_BUCKET:-video-frames}
-      
       # AWS S3 Storage (optional)
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
@@ -168,7 +151,6 @@ services:
     volumes:
       - video_temp:/tmp/video-analysis
       - ./backend:/app:ro
-      # Mount cookies directory (read-only)
       - ./cookies:/app/cookies:ro
     depends_on:
       postgres:
@@ -199,20 +181,15 @@ services:
     environment:
       # Database
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-video_analysis}
-      
       # Redis
       REDIS_URL: redis://redis:6379/0
-      
       # OpenAI
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-      
       # Supabase Storage (optional)
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_KEY: ${SUPABASE_KEY:-}
-      
       # Monitor Configuration
       WORKER_HEALTH_CHECK_INTERVAL: ${WORKER_HEALTH_CHECK_INTERVAL:-60}
       WORKER_HEALTH_CHECK_TIMEOUT: ${WORKER_HEALTH_CHECK_TIMEOUT:-10}
@@ -239,20 +216,15 @@ services:
     environment:
       # Database
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-video_analysis}
-      
       # Redis
       REDIS_URL: redis://redis:6379/0
-      
       # OpenAI
       OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-      
       # Supabase Storage (optional)
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_KEY: ${SUPABASE_KEY:-}
-      
       # Application
       TEMP_DIR: /tmp/video-analysis
       STORAGE_DIR: /tmp/video-analysis/storage
@@ -288,292 +260,7 @@ services:
     networks:
       - video-analysis-network
 
-  # Nginx Reverse Proxy (Optional - for production)
-  nginx:
-    image: nginx:alpine
-    container_name: video-analysis-nginx
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-    ports:
-      - "${NGINX_HTTP_PORT:-80}:80"
-      - "${NGINX_HTTPS_PORT:-443}:443"
-    depends_on:
-      - backend
-      - frontend
-    restart: unless-stopped
-    networks:
-      - video-analysis-network
-    profiles:
-      - production
-
-volumes:
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  video_temp:
-    driver: local
-
-networks:
-  video-analysis-network:
-    driver: bridge
-    image: pgvector/pgvector:pg16
-    container_name: video-analysis-postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-video_analysis}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - video-analysis-network
-
-  # Redis
-  redis:
-    image: redis:7-alpine
-    container_name: video-analysis-redis
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    networks:
-      - video-analysis-network
-
-  # Backend API
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: video-analysis-backend
-    environment:
-      # Database
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-video_analysis}
-      
-      # Redis
-      REDIS_URL: redis://redis:6379/0
-      
-      # OpenAI
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
-      # YouTube
-      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-      YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-}
-      YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-}
-      
-      # Application
-      TEMP_DIR: /tmp/video-analysis
-      STORAGE_DIR: /tmp/video-analysis/storage
-      MAX_VIDEO_DURATION: ${MAX_VIDEO_DURATION:-1800}
-      MAX_FRAMES: ${MAX_FRAMES:-30}
-
-      
-      # Supabase Storage (optional)
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_KEY: ${SUPABASE_KEY:-}
-      SUPABASE_BUCKET: ${SUPABASE_BUCKET:-video-frames}
-      
-      # AWS S3 Storage (optional)
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
-      AWS_REGION: ${AWS_REGION:-}
-      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
-    volumes:
-      - video_temp:/tmp/video-analysis
-      - ./backend:/app:ro
-      # Mount cookies file if provided
-      #- ${YOUTUBE_COOKIES_PATH:-/dev/null}:${YOUTUBE_COOKIES_PATH:-/dev/null}:ro
-    ports:
-      - "${BACKEND_PORT:-1945}:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
-    networks:
-      - video-analysis-network
-
-  # Celery Worker
-  celery-worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: video-analysis-celery-worker
-    environment:
-      # Database
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-video_analysis}
-      
-      # Redis
-      REDIS_URL: redis://redis:6379/0
-      
-      # OpenAI
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
-      # YouTube
-      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-      YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-}
-      YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-}
-      
-      # Application
-      TEMP_DIR: /tmp/video-analysis
-      STORAGE_DIR: /tmp/video-analysis/storage
-      MAX_VIDEO_DURATION: ${MAX_VIDEO_DURATION:-1800}
-      MAX_FRAMES: ${MAX_FRAMES:-30}
-
-      
-      # Supabase Storage (optional)
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_KEY: ${SUPABASE_KEY:-}
-      SUPABASE_BUCKET: ${SUPABASE_BUCKET:-video-frames}
-      
-      # AWS S3 Storage (optional)
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
-      AWS_REGION: ${AWS_REGION:-}
-      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
-    volumes:
-      - video_temp:/tmp/video-analysis
-      - ./backend:/app:ro
-      #- ${YOUTUBE_COOKIES_PATH:-/dev/null}:${YOUTUBE_COOKIES_PATH:-/dev/null}:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - video-analysis-network
-    command: celery -A celery_app worker --loglevel=info --pool=solo --time-limit=1800 --soft-time-limit=1500
-    healthcheck:
-      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d celery@$$HOSTNAME"]
-      interval: 60s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  # Worker Monitor - Auto-restart hung workers
-  worker-monitor:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: video-analysis-worker-monitor
-    environment:
-      # Database
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-video_analysis}
-      
-      # Redis
-      REDIS_URL: redis://redis:6379/0
-      
-      # OpenAI
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
-      # YouTube
-      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-      
-      # Supabase Storage (optional)
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_KEY: ${SUPABASE_KEY:-}
-      
-      # Monitor Configuration
-      WORKER_HEALTH_CHECK_INTERVAL: ${WORKER_HEALTH_CHECK_INTERVAL:-60}
-      WORKER_HEALTH_CHECK_TIMEOUT: ${WORKER_HEALTH_CHECK_TIMEOUT:-10}
-      WORKER_MAX_RESTART_ATTEMPTS: ${WORKER_MAX_RESTART_ATTEMPTS:-3}
-      WORKER_RESTART_COOLDOWN: ${WORKER_RESTART_COOLDOWN:-300}
-    volumes:
-      - ./backend:/app:ro
-    depends_on:
-      redis:
-        condition: service_healthy
-      celery-worker:
-        condition: service_started
-    restart: unless-stopped
-    networks:
-      - video-analysis-network
-    command: python scripts/worker_monitor.py
-
-  # Celery Beat (Scheduler)
-  celery-beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: video-analysis-celery-beat
-    environment:
-      # Database
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-video_analysis}
-      
-      # Redis
-      REDIS_URL: redis://redis:6379/0
-      
-      # OpenAI
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      
-      # YouTube
-      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-      
-      # Supabase Storage (optional)
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_KEY: ${SUPABASE_KEY:-}
-      
-      # Application
-      TEMP_DIR: /tmp/video-analysis
-      STORAGE_DIR: /tmp/video-analysis/storage
-      CELERYBEAT_SCHEDULE_FILENAME: /tmp/celerybeat-schedule
-    volumes:
-      - ./backend:/app:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - video-analysis-network
-    command: celery -A celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
-
-  # Frontend (Next.js)
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:1945}
-    container_name: video-analysis-frontend
-    environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:1945}
-    ports:
-      - "${FRONTEND_PORT:-1946}:3000"
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - video-analysis-network
-
-  # Nginx Reverse Proxy (Optional - for production)
+  # Nginx Reverse Proxy (Optional - for production with --profile production)
   nginx:
     image: nginx:alpine
     container_name: video-analysis-nginx
