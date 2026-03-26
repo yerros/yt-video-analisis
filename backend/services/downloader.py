@@ -210,15 +210,29 @@ def download_video(youtube_url: str, job_id: str, expected_duration: int = None)
         "--retry-sleep", "exp=1:5",
     ]
     
-    # Add cookies - try file first, then browser
+    # Add cookies - try file first, then browser (optional, skip if unavailable)
+    cookies_added = False
     if settings.youtube_cookies_path and Path(settings.youtube_cookies_path).exists():
         base_args.extend(["--cookies", settings.youtube_cookies_path])
         logger.info(f"Using cookies file: {settings.youtube_cookies_path}")
+        cookies_added = True
     elif settings.youtube_cookies_browser:
-        base_args.extend(["--cookies-from-browser", settings.youtube_cookies_browser])
-        logger.info(f"Using cookies from browser: {settings.youtube_cookies_browser}")
-    else:
-        logger.warning("No cookies configured - downloads may be blocked by YouTube")
+        # Browser cookies only work in local dev, not in Docker
+        # Check if we're likely in Docker (no browser profile directory)
+        chrome_profile_dir = Path.home() / ".config/google-chrome"
+        firefox_profile_dir = Path.home() / ".mozilla/firefox"
+        
+        if chrome_profile_dir.exists() or firefox_profile_dir.exists():
+            # Local development - use browser cookies
+            base_args.extend(["--cookies-from-browser", settings.youtube_cookies_browser])
+            logger.info(f"Using cookies from browser: {settings.youtube_cookies_browser}")
+            cookies_added = True
+        else:
+            # Docker environment - skip browser cookies
+            logger.info(f"Browser not found (Docker environment), skipping cookies extraction")
+    
+    if not cookies_added:
+        logger.info("Downloading without cookies - most public videos should work fine")
     
     try:
         # If expected_duration is provided, skip metadata fetch

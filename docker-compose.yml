@@ -59,7 +59,7 @@ services:
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
       YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-}
-      YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-chrome}
+      YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-}
       
       # Application
       TEMP_DIR: /tmp/video-analysis
@@ -118,7 +118,7 @@ services:
       # YouTube
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
       YOUTUBE_COOKIES_PATH: ${YOUTUBE_COOKIES_PATH:-}
-      YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-chrome}
+      YOUTUBE_COOKIES_BROWSER: ${YOUTUBE_COOKIES_BROWSER:-}
       
       # Application
       TEMP_DIR: /tmp/video-analysis
