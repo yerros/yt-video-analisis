@@ -63,7 +63,7 @@ echo "Running database migrations..."
 alembic upgrade head
 
 # Check if we should auto-import data
-IMPORT_FLAG_FILE="/app/.db_imported"
+IMPORT_FLAG_FILE="/tmp/.db_imported"
 SQL_IMPORT_FILE="/app/export_jobs_*.sql"
 
 # Find the SQL file (expand glob)
