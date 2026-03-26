@@ -194,7 +194,7 @@ def get_last_health_check() -> Optional[str]:
         ISO timestamp string, or None if not found.
     """
     try:
-        log_file = Path("backend/worker_monitor.log")
+        log_file = Path("/tmp/worker_monitor.log")
         if not log_file.exists():
             return None
         
@@ -291,8 +291,8 @@ async def restart_worker() -> Dict[str, Any]:
         
         # Start new worker
         backend_dir = Path(__file__).parent.parent
-        worker_log = backend_dir / 'worker.log'
-        worker_err = backend_dir / 'worker_error.log'
+        worker_log = Path('/tmp/worker.log')
+        worker_err = Path('/tmp/worker_error.log')
         
         log_file = open(worker_log, 'a')
         err_file = open(worker_err, 'a')

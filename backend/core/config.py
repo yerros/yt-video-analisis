@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     # Application
     temp_dir: str = "/tmp/video-analysis"
-    storage_dir: str = str(Path(__file__).parent.parent / "storage")
+    storage_dir: str = "/tmp/video-analysis/storage"
     max_video_duration: int = 1800  # 30 minutes in seconds
     max_frames: int = 30
     

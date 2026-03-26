@@ -63,6 +63,7 @@ services:
       
       # Application
       TEMP_DIR: /tmp/video-analysis
+      STORAGE_DIR: /tmp/video-analysis/storage
       MAX_VIDEO_DURATION: ${MAX_VIDEO_DURATION:-1800}
       MAX_FRAMES: ${MAX_FRAMES:-30}
 
@@ -122,6 +123,7 @@ services:
       
       # Application
       TEMP_DIR: /tmp/video-analysis
+      STORAGE_DIR: /tmp/video-analysis/storage
       MAX_VIDEO_DURATION: ${MAX_VIDEO_DURATION:-1800}
       MAX_FRAMES: ${MAX_FRAMES:-30}
 
@@ -223,6 +225,7 @@ services:
       
       # Application
       TEMP_DIR: /tmp/video-analysis
+      STORAGE_DIR: /tmp/video-analysis/storage
       CELERYBEAT_SCHEDULE_FILENAME: /tmp/celerybeat-schedule
     volumes:
       - ./backend:/app:ro

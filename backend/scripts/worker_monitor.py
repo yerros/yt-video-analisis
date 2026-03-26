@@ -72,8 +72,8 @@ WORKER_COMMAND = [
 ]
 
 # Worker log files
-WORKER_LOG = BACKEND_DIR / 'worker.log'
-WORKER_ERR_LOG = BACKEND_DIR / 'worker_error.log'
+WORKER_LOG = Path('/tmp/worker.log')
+WORKER_ERR_LOG = Path('/tmp/worker_error.log')
 
 
 def find_worker_process():
