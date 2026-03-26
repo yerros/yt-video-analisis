@@ -60,14 +60,9 @@ class ExportImportService:
             raise ValueError(f"Job {job_id} is not completed (status: {job.status})")
 
         # Prepare paths
-        job_temp_dir = self.temp_dir / str(job_id)
         frames_dir = self.storage_dir / "frames" / str(job_id)
 
-        # Check if video and frames exist
-        video_path = job_temp_dir / "video.mp4"
-        if not video_path.exists():
-            raise ValueError(f"Video file not found for job {job_id}")
-
+        # Check if frames exist (we only export data, not video)
         if not frames_dir.exists() or not any(frames_dir.iterdir()):
             raise ValueError(f"No frames found for job {job_id}")
 
@@ -87,6 +82,7 @@ class ExportImportService:
                 "exported_at": datetime.utcnow().isoformat(),
                 "job_id": str(job_id),
                 "video_title": job.video_title,
+                "export_type": "data_only",  # Only exporting analysis data and frames
             }
             manifest_path = export_temp_dir / self.MANIFEST_FILE
             manifest_path.write_text(json.dumps(manifest, indent=2))
@@ -96,11 +92,7 @@ class ExportImportService:
             metadata_path = export_temp_dir / self.METADATA_FILE
             metadata_path.write_text(json.dumps(metadata, indent=2))
 
-            # Copy video
-            video_dest = export_temp_dir / self.VIDEO_FILE
-            shutil.copy2(video_path, video_dest)
-
-            # Copy frames
+            # Copy frames only (no video)
             frames_dest = export_temp_dir / self.FRAMES_DIR
             shutil.copytree(frames_dir, frames_dest)
 
@@ -181,12 +173,8 @@ class ExportImportService:
 
             metadata = json.loads(metadata_path.read_text())
 
-            # Validate video and frames
-            video_path = import_temp_dir / self.VIDEO_FILE
+            # Validate frames (video is optional, we only export data)
             frames_dir = import_temp_dir / self.FRAMES_DIR
-
-            if not video_path.exists():
-                raise ValueError("Invalid export file: video.mp4 not found")
 
             if not frames_dir.exists() or not any(frames_dir.iterdir()):
                 raise ValueError("Invalid export file: no frames found")
@@ -212,12 +200,6 @@ class ExportImportService:
             else:
                 self.db.commit()
                 self.db.refresh(job)
-
-            # Copy video to temp directory
-            job_temp_dir = self.temp_dir / str(job_id)
-            job_temp_dir.mkdir(parents=True, exist_ok=True)
-            video_dest = job_temp_dir / "video.mp4"
-            shutil.copy2(video_path, video_dest)
 
             # Copy frames to storage
             frames_dest = self.storage_dir / "frames" / str(job_id)
