@@ -103,9 +103,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      bgutil-provider:
-        condition: service_started
-        required: false
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -158,9 +155,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      bgutil-provider:
-        condition: service_started
-        required: false
       backend:
         condition: service_healthy
     restart: unless-stopped
