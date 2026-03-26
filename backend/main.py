@@ -12,9 +12,11 @@ app = FastAPI(
 )
 
 # CORS middleware
+# Allow all origins for Docker deployment across different networks
+# In production, you should restrict this to specific domains
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=["*"],  # Allow all origins (customize for production)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
