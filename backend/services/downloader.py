@@ -203,11 +203,17 @@ def download_video(youtube_url: str, job_id: str, expected_duration: int = None)
     logger.info(f"Using yt-dlp from: {yt_dlp_bin}")
     
     # Base command args
+    # Use mweb client as recommended by yt-dlp PO Token Guide for best compatibility
+    # Add sleep intervals to avoid HTTP 429 Too Many Requests
     base_args = [
         yt_dlp_bin,
-        "--extractor-retries", "3",
-        "--fragment-retries", "3",
-        "--retry-sleep", "exp=1:5",
+        "--extractor-retries", "5",
+        "--fragment-retries", "5",
+        "--retry-sleep", "exp=2:10",
+        "--sleep-requests", "1",       # 1 second sleep between requests (avoids 429)
+        "--sleep-interval", "2",       # 2 seconds sleep before each download
+        "--max-sleep-interval", "5",   # randomize up to 5 seconds
+        "--extractor-args", "youtube:player_client=mweb,web",  # mweb is recommended for avoiding bot detection
     ]
     
     # Add cookies - try file first, then browser (optional, skip if unavailable)
@@ -232,7 +238,10 @@ def download_video(youtube_url: str, job_id: str, expected_duration: int = None)
             logger.info(f"Browser not found (Docker environment), skipping cookies extraction")
     
     if not cookies_added:
-        logger.info("Downloading without cookies - most public videos should work fine")
+        logger.warning(
+            "Downloading without cookies - may hit bot detection (HTTP 429 or 'Sign in to confirm'). "
+            "Set YOUTUBE_COOKIES_PATH in .env to a valid cookies.txt file to fix this."
+        )
     
     try:
         # If expected_duration is provided, skip metadata fetch
@@ -324,6 +333,23 @@ def download_video(youtube_url: str, job_id: str, expected_duration: int = None)
     except subprocess.CalledProcessError as e:
         logger.error(f"Download failed: {e.output if hasattr(e, 'output') else e.stderr}")
         error_msg = e.output if hasattr(e, 'output') else str(e)
+        
+        # Provide more specific error messages for common YouTube errors
+        if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():
+            raise DownloadFailedError(
+                f"YouTube bot detection triggered. Please update the cookies file at "
+                f"{settings.youtube_cookies_path or 'YOUTUBE_COOKIES_PATH in .env'}. "
+                f"Export fresh cookies from your browser using a cookie export extension. "
+                f"Details: {error_msg}"
+            )
+        elif "429" in error_msg or "Too Many Requests" in error_msg:
+            raise DownloadFailedError(
+                f"YouTube rate limit (HTTP 429). Your IP is temporarily blocked. "
+                f"Wait a few minutes and try again, or use a VPN. "
+                f"If this persists, solve the CAPTCHA on YouTube in your browser then "
+                f"export fresh cookies. Details: {error_msg}"
+            )
+        
         raise DownloadFailedError(f"Failed to download video: {error_msg}")
     except Exception as e:
         logger.error(f"Download failed: {e}")
