@@ -37,10 +37,26 @@ class WorkerStatusResponse(BaseModel):
 def find_worker_process() -> Optional[int]:
     """Find the Celery worker process ID.
     
+    In Docker, use celery inspect instead of pgrep.
+    
     Returns:
         Process ID if found, None otherwise.
     """
     try:
+        # Try using celery inspect to check if worker is online
+        inspect = celery_app.control.inspect(timeout=2)
+        stats = inspect.stats()
+        
+        if stats:
+            # Worker is online, get PID from stats
+            for worker_name, worker_stats in stats.items():
+                if 'pid' in worker_stats:
+                    return worker_stats['pid']
+            # If no PID in stats, at least we know worker is running
+            # Return a dummy PID to indicate "running"
+            return 1
+        
+        # Fallback to pgrep (for non-Docker environments)
         result = subprocess.run(
             ['pgrep', '-f', 'celery.*worker'],
             capture_output=True,
@@ -128,15 +144,22 @@ def check_redis_connection() -> bool:
         True if connected, False otherwise.
     """
     try:
-        result = subprocess.run(
-            ['redis-cli', 'ping'],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        return result.returncode == 0 and result.stdout.strip() == 'PONG'
+        # Try using Redis from celery connection first
+        from redis import Redis
+        redis_client = Redis.from_url(settings.redis_url)
+        return redis_client.ping()
     except Exception:
-        return False
+        try:
+            # Fallback to redis-cli command
+            result = subprocess.run(
+                ['redis-cli', '-h', 'redis', 'ping'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return result.returncode == 0 and result.stdout.strip() == 'PONG'
+        except Exception:
+            return False
 
 
 def check_worker_health() -> bool:
