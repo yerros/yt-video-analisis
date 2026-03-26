@@ -16,14 +16,16 @@ WORKDIR /app
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
+# Install Python dependencies including yt-dlp[default] for EJS scripts
+# and bgutil-ytdlp-pot-provider for YouTube PO Token generation
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir "yt-dlp[default]" bgutil-ytdlp-pot-provider
 
 # Production stage
 FROM python:3.12.13-slim
 
-# Install runtime dependencies only
+# Install runtime dependencies + Node.js (required for yt-dlp EJS challenge solver)
 RUN apt-get update && apt-get install -y \
     libpq5 \
     libgomp1 \
@@ -31,6 +33,8 @@ RUN apt-get update && apt-get install -y \
     curl \
     postgresql-client \
     redis-tools \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security

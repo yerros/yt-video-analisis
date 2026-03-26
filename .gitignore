@@ -92,3 +92,7 @@ backups/
 
 # Monitoring
 monitoring.yml
+
+# YouTube cookies (sensitive - contains session tokens)
+cookies/
+www.youtube.com_cookies.txt

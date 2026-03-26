@@ -203,18 +203,27 @@ def download_video(youtube_url: str, job_id: str, expected_duration: int = None)
     logger.info(f"Using yt-dlp from: {yt_dlp_bin}")
     
     # Base command args
-    # Use mweb client as recommended by yt-dlp PO Token Guide for best compatibility
-    # Add sleep intervals to avoid HTTP 429 Too Many Requests
+    # - node JS runtime required for yt-dlp EJS challenge solver (YouTube n-challenge)
+    # - bgutil plugin (bgutil-ytdlp-pot-provider) auto-generates GVS PO Tokens when server is running
+    # - sleep options reduce rate limit (HTTP 429) risk
     base_args = [
         yt_dlp_bin,
         "--extractor-retries", "5",
         "--fragment-retries", "5",
         "--retry-sleep", "exp=2:10",
-        "--sleep-requests", "1",       # 1 second sleep between requests (avoids 429)
-        "--sleep-interval", "2",       # 2 seconds sleep before each download
-        "--max-sleep-interval", "5",   # randomize up to 5 seconds
-        "--extractor-args", "youtube:player_client=mweb,web",  # mweb is recommended for avoiding bot detection
+        "--sleep-requests", "1",       # 1s sleep between requests (avoids 429)
+        "--sleep-interval", "2",       # 2s sleep before each download
+        "--max-sleep-interval", "5",   # randomize up to 5s
+        "--js-runtimes", "node",       # use Node.js for EJS YouTube challenge solving
     ]
+    
+    # Point bgutil plugin to the bgutil-provider service (Docker internal network)
+    bgutil_url = settings.bgutil_provider_url
+    if bgutil_url:
+        base_args.extend([
+            "--extractor-args", f"youtubepot-bgutilhttp:base_url={bgutil_url}",
+        ])
+        logger.info(f"Using bgutil PO Token provider at: {bgutil_url}")
     
     # Add cookies - try file first, then browser (optional, skip if unavailable)
     cookies_added = False

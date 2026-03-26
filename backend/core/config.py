@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     youtube_cookies_path: str = ""  # Optional: Path to cookies.txt file for YouTube authentication
     youtube_cookies_browser: str = "chrome"  # Browser to extract cookies from (chrome, firefox, edge, safari, etc.)
     
+    # bgutil PO Token Provider (https://github.com/Brainicism/bgutil-ytdlp-pot-provider)
+    # Set to empty string to disable. In Docker, use http://bgutil-provider:4416
+    bgutil_provider_url: str = ""
+    
     # GPT Model
     gpt_model: str = "gpt-4o"
 
