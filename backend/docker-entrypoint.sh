@@ -3,7 +3,14 @@ set -e
 
 echo "Starting Video Analysis Backend..."
 
-# Wait for database to be ready
+# Check if this is a worker/beat/monitor (skip DB setup)
+if [[ "$1" == "celery" ]] || [[ "$1" == "python" && "$2" == *"worker_monitor"* ]]; then
+    echo "Detected worker/monitor service, skipping database setup..."
+    exec "$@"
+    exit 0
+fi
+
+# Wait for database to be ready (only for backend)
 echo "Waiting for PostgreSQL to be ready..."
 python -c "
 import time
@@ -117,5 +124,5 @@ echo "Current database statistics:"
 PYTHONPATH=/app python /app/scripts/db_export.py stats || echo "Could not retrieve stats"
 
 # Start the application
-echo "Starting FastAPI application..."
-exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+echo "Starting application..."
+exec "$@"
