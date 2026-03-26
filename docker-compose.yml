@@ -165,8 +165,21 @@ services:
       dockerfile: Dockerfile
     container_name: video-analysis-worker-monitor
     environment:
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-video_analysis}
+      
       # Redis
       REDIS_URL: redis://redis:6379/0
+      
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      
+      # YouTube
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
+      
+      # Supabase Storage (optional)
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_KEY: ${SUPABASE_KEY:-}
       
       # Monitor Configuration
       WORKER_HEALTH_CHECK_INTERVAL: ${WORKER_HEALTH_CHECK_INTERVAL:-60}
@@ -197,6 +210,16 @@ services:
       
       # Redis
       REDIS_URL: redis://redis:6379/0
+      
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      
+      # YouTube
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
+      
+      # Supabase Storage (optional)
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_KEY: ${SUPABASE_KEY:-}
       
       # Application
       TEMP_DIR: /tmp/video-analysis
