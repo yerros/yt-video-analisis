@@ -5,9 +5,11 @@ import shutil
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from core.config import settings
@@ -23,13 +25,14 @@ class ExportImportService:
     VIDEO_FILE = "video.mp4"
     FRAMES_DIR = "frames"
 
-    def __init__(self, db: Session):
+    def __init__(self, db: Union[AsyncSession, Session]):
         """Initialize export/import service."""
         self.db = db
+        self.is_async = isinstance(db, AsyncSession)
         self.storage_dir = Path(settings.storage_dir)
         self.temp_dir = Path(settings.temp_dir)
 
-    def export_job(self, job_id: str, output_path: Optional[Path] = None) -> Path:
+    async def export_job(self, job_id: str, output_path: Optional[Path] = None) -> Path:
         """
         Export a job with all its data to a ZIP file.
 
@@ -44,7 +47,12 @@ class ExportImportService:
             ValueError: If job not found or has no video/frames
         """
         # Get job from database
-        job = self.db.query(Job).filter(Job.id == UUID(job_id)).first()
+        if self.is_async:
+            result = await self.db.execute(select(Job).where(Job.id == UUID(job_id)))
+            job = result.scalar_one_or_none()
+        else:
+            job = self.db.query(Job).filter(Job.id == UUID(job_id)).first()
+        
         if not job:
             raise ValueError(f"Job {job_id} not found")
 
@@ -110,7 +118,7 @@ class ExportImportService:
             if export_temp_dir.exists():
                 shutil.rmtree(export_temp_dir)
 
-    def import_job(self, zip_path: Path, skip_existing: bool = True) -> Dict[str, Any]:
+    async def import_job(self, zip_path: Path, skip_existing: bool = True) -> Dict[str, Any]:
         """
         Import a job from a ZIP file.
 
@@ -152,7 +160,12 @@ class ExportImportService:
                 raise ValueError("Invalid manifest: job_id not found")
 
             # Check if job already exists
-            existing_job = self.db.query(Job).filter(Job.id == UUID(job_id)).first()
+            if self.is_async:
+                result = await self.db.execute(select(Job).where(Job.id == UUID(job_id)))
+                existing_job = result.scalar_one_or_none()
+            else:
+                existing_job = self.db.query(Job).filter(Job.id == UUID(job_id)).first()
+            
             if existing_job and skip_existing:
                 return {
                     "success": True,
@@ -188,10 +201,17 @@ class ExportImportService:
             else:
                 # Create new job
                 job = Job(**metadata)
-                self.db.add(job)
+                if self.is_async:
+                    self.db.add(job)
+                else:
+                    self.db.add(job)
 
-            self.db.commit()
-            self.db.refresh(job)
+            if self.is_async:
+                await self.db.commit()
+                await self.db.refresh(job)
+            else:
+                self.db.commit()
+                self.db.refresh(job)
 
             # Copy video to temp directory
             job_temp_dir = self.temp_dir / str(job_id)
@@ -213,7 +233,10 @@ class ExportImportService:
             }
 
         except Exception as e:
-            self.db.rollback()
+            if self.is_async:
+                await self.db.rollback()
+            else:
+                self.db.rollback()
             raise ValueError(f"Import failed: {str(e)}")
 
         finally:
@@ -261,14 +284,19 @@ class ExportImportService:
             "updated_at": job.updated_at.isoformat() if job.updated_at else None,
         }
 
-    def list_exportable_jobs(self) -> List[Dict[str, Any]]:
+    async def list_exportable_jobs(self) -> List[Dict[str, Any]]:
         """
         List all jobs that can be exported (status=done with video and frames).
 
         Returns:
             List of job summaries
         """
-        jobs = self.db.query(Job).filter(Job.status == "done").all()
+        if self.is_async:
+            result = await self.db.execute(select(Job).where(Job.status == "done"))
+            jobs = result.scalars().all()
+        else:
+            jobs = self.db.query(Job).filter(Job.status == "done").all()
+        
         exportable = []
 
         for job in jobs:

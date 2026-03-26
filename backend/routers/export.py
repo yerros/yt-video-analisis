@@ -43,7 +43,7 @@ async def list_exportable_jobs(db: Session = Depends(get_db)):
         List of exportable jobs (status=done with video and frames)
     """
     service = ExportImportService(db)
-    jobs = service.list_exportable_jobs()
+    jobs = await service.list_exportable_jobs()
     return jobs
 
 
@@ -60,13 +60,15 @@ async def export_job(job_id: str, db: Session = Depends(get_db)):
     """
     try:
         service = ExportImportService(db)
-        zip_path = service.export_job(job_id)
+        zip_path = await service.export_job(job_id)
 
         # Get video title for filename
         from models.job import Job
         from uuid import UUID
+        from sqlalchemy import select
 
-        job = db.query(Job).filter(Job.id == UUID(job_id)).first()
+        result = await db.execute(select(Job).where(Job.id == UUID(job_id)))
+        job = result.scalar_one_or_none()
         if not job:
             raise HTTPException(status_code=404, detail="Job not found")
 
@@ -123,7 +125,7 @@ async def import_job(
 
         # Import the job
         service = ExportImportService(db)
-        result = service.import_job(temp_zip_path, skip_existing=skip_existing)
+        result = await service.import_job(temp_zip_path, skip_existing=skip_existing)
 
         return result
 
