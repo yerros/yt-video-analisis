@@ -36,7 +36,7 @@ from celery.exceptions import TimeoutError
 from core.config import settings
 
 # Setup logging
-LOG_FILE = BACKEND_DIR / 'worker_monitor.log'
+LOG_FILE = Path('/tmp/worker_monitor.log')
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',

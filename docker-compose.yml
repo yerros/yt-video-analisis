@@ -234,7 +234,7 @@ services:
     restart: unless-stopped
     networks:
       - video-analysis-network
-    command: celery -A celery_app beat --loglevel=info
+    command: celery -A celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
 
   # Frontend (Next.js)
   frontend:
