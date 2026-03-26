@@ -83,7 +83,7 @@ services:
       # Mount cookies file if provided
       #- ${YOUTUBE_COOKIES_PATH:-/dev/null}:${YOUTUBE_COOKIES_PATH:-/dev/null}:ro
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT:-1945}:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -200,8 +200,8 @@ services:
       
       # Application
       TEMP_DIR: /tmp/video-analysis
+      CELERYBEAT_SCHEDULE_FILENAME: /tmp/celerybeat-schedule
     volumes:
-      - celery_beat:/app/celerybeat-schedule
       - ./backend:/app:ro
     depends_on:
       postgres:
@@ -219,12 +219,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:1945}
     container_name: video-analysis-frontend
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:1945}
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-1946}:3000"
     depends_on:
       backend:
         condition: service_healthy
@@ -257,8 +257,6 @@ volumes:
   redis_data:
     driver: local
   video_temp:
-    driver: local
-  celery_beat:
     driver: local
 
 networks:
