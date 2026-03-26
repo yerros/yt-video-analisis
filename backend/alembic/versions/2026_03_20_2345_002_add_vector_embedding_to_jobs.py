@@ -19,6 +19,9 @@ depends_on = None
 
 def upgrade() -> None:
     """Add vector embedding column to jobs table."""
+    # Enable pgvector extension if not already enabled
+    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
+    
     # Add embedding column (1536 dimensions for text-embedding-3-small)
     op.add_column('jobs', sa.Column('embedding', Vector(1536), nullable=True))
     
